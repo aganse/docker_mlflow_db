@@ -1,0 +1,64 @@
+# based on https://towardsdatascience.com/deploy-mlflow-with-docker-compose-8059f16b6039
+# but with goals to:
+# 1. replace AWS usage with local mapping for artifact store (done)
+# 2. replace mysql with postgresql in here.
+version: '3.4'
+
+services:
+    db:
+        restart: always
+        image: mysql/mysql-server:5.7.28
+        container_name: mlflow_db
+        expose:
+            - "3306"
+        networks:
+            - backend
+        environment:
+            - MYSQL_DATABASE=${MYSQL_DATABASE}
+            - MYSQL_USER=${MYSQL_USER}
+            - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+            - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+        volumes:
+            - db_data:/var/lib/mysql
+
+    web:
+        restart: always
+        build: ./mlflow
+        image: mlflow_server
+        container_name: mlflow_server
+        expose:
+            - "5000"
+        networks:
+            - frontend
+            - backend
+        #environment:
+          #- AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          #  - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+          #  DEFAULT_ARTIFACT_ROOT to use instead with AWS:
+          #    s3://mlflow_bucket/mlflow/
+        volumes:
+            - mlrun_data:/mlruns
+        command: mlflow server --backend-store-uri mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE} --default-artifact-root /mlruns --host 0.0.0.0
+
+    nginx:
+        restart: always
+        build: ./nginx
+        image: mlflow_nginx
+        container_name: mlflow_nginx
+        ports:
+            - "80:80"
+        networks:
+            - frontend
+        depends_on:
+            - web
+
+networks:
+    frontend:
+        driver: bridge
+    backend:
+        driver: bridge
+
+volumes:
+    db_data:
+    mlrun_data:
