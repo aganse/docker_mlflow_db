@@ -18,11 +18,12 @@ https://medium.com/vantageai/keeping-your-ml-model-in-shape-with-kafka-airflow-a
 ### To run:
 Set the following env vars in shell first:
 ```bash
-export MYSQL_DATABASE='mlflowdb'
-export MYSQL_USER='andy'
-export MYSQL_PASSWORD='<mypassword>'        # (choose an actual pw)
-export MYSQL_ROOT_PASSWORD='<rtpassword>'   # (choose an actual pw)
+export DB_NAME='mlflowdb'
+export DB_USER='andy'
+export DB_PW='<mypassword>'        # (choose an actual pw)
+export DB_ROOT_PW='<rtpassword>'   # (choose an actual pw)
 ```
+(or you can use these into an .env file without the 'export's...)
 
 Then start the containers with:
 ```bash
