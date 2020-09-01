@@ -1,0 +1,5 @@
+#!/bin/bash
+
+#docker run -it --rm --link postgres:postgres postgres:latest sh -c "exec psql -h localhost -p 5432 -U postgres"
+#docker run -it postgres:latest sh -c "exec psql -h 172.17.0.1 -p 5432 -U postgres"
+docker exec -it mlflow_db sh -c "exec psql -h 172.17.0.1 -p 5432 -U postgres -d mlflowdb"

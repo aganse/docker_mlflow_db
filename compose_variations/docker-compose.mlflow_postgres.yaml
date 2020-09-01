@@ -1,0 +1,43 @@
+version: '3.3'
+
+services:
+    db:
+        restart: always
+        image: postgres:latest
+        container_name: mlflow_db
+        expose:
+            - "5432"
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_DB=${DB_NAME}
+            - POSTGRES_USER=${DB_USER}    # postgres admin user
+            - POSTGRES_PASSWORD=${DB_PW}  # admin password
+        volumes:
+            - db_datapg:/var/lib/postgresql/data
+        # Future step:
+        # let's put this postgres image in a container defined in a subdir
+        # after all and add some lines in its Dockerfile that run PG routines
+        # to add/config an mlflow user so we're not using postgres admin/owner
+        # account for mlflow...
+
+    app:
+        restart: always
+        build: ./mlflow
+        image: mlflow_server
+        container_name: mlflow_server
+        expose:
+            - "5000"
+        ports:
+          - "5000:5000"
+        environment:
+          - DB_CONNECT="postgresql://${DB_USER}:${DB_PW}@db:5432/${DB_NAME}"
+        volumes:
+            - mlrun_data:/mlruns
+        command: mlflow server --host 0.0.0.0 --backend-store-uri ${DB_CONNECT} --default-artifact-root /mlruns
+        depends_on:
+            - db
+
+volumes:
+    db_datapg:
+    mlrun_data:

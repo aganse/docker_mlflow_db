@@ -1,0 +1,77 @@
+# based on https://towardsdatascience.com/deploy-mlflow-with-docker-compose-8059f16b6039
+# but with goals to:
+# 1. replace AWS usage with local mapping for artifact store (done)
+# 2. replace mysql with postgresql in here.
+version: '3.3'
+
+services:
+    db:
+        restart: always
+        #image: mysql/mysql-server:5.7.28
+        image: postgres:latest
+        container_name: mlflow_db
+        expose:
+            #- "3306"
+            - "5432"
+        ports:
+            - "5432:5432"
+        # networks:
+        #     - frontend
+        environment:
+            - POSTGRES_DB=${DB_NAME}
+            - POSTGRES_USER=${DB_USER}    # postgres admin user
+            - POSTGRES_PASSWORD=${DB_PW}  # admin password
+            #- MYSQL_DATABASE=${DB_NAME}
+            #- MYSQL_USER=${DB_USER}
+            #- MYSQL_PASSWORD=${DB_PW}
+            #- MYSQL_ROOT_PASSWORD=${DB_ROOT_PW}
+        volumes:
+            # - db_data:/var/lib/mysql
+            - db_datapg:/var/lib/postgresql/data
+
+    web:
+        restart: always
+        build: ./mlflow
+        image: mlflow_server
+        container_name: mlflow_server
+        expose:
+            - "5000"
+        ports:
+          - "5000:5000"
+        # networks:
+        #     - frontend
+        #     - backend
+        #environment:
+          #- AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          #  - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+          #  DEFAULT_ARTIFACT_ROOT to use instead with AWS:
+          #    s3://mlflow_bucket/mlflow/
+        volumes:
+            - mlrun_data:/mlruns
+        command: mlflow server --host 0.0.0.0 --backend-store-uri "postgresql://${DB_USER}:${DB_PW}@db:5432/${DB_NAME}" --default-artifact-root /mlruns
+        depends_on:
+            - db
+
+    # nginx:
+        # restart: always
+        # build: ./nginx
+        # image: mlflow_nginx
+        # container_name: mlflow_nginx
+        # ports:
+            # - "80:80"
+        # networks:
+            # - frontend
+        # depends_on:
+            # - web
+
+# networks:
+#     frontend:
+#         driver: bridge
+#     backend:
+#         driver: bridge
+    
+volumes:
+    #db_data:
+    db_datapg:
+    mlrun_data:

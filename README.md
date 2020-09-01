@@ -1,5 +1,6 @@
-# docker_mlflow_db_nginx
-A docker-compose setup with containers for MLflow, PostgreSQL, and NGINX
+# docker_mlflow_db
+A docker-compose setup to quickly provide MlFlow service with database backend
+and potentially reverse proxy frontend for authentication.
 
 ### Summary:
 Merely a tweak of [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
@@ -19,7 +20,7 @@ https://medium.com/vantageai/keeping-your-ml-model-in-shape-with-kafka-airflow-a
 Set the following env vars in shell first:
 ```bash
 export DB_NAME='mlflowdb'
-export DB_USER='andy'
+export DB_USER='postgres'
 export DB_PW='<mypassword>'        # (choose an actual pw)
 export DB_ROOT_PW='<rtpassword>'   # (choose an actual pw)
 ```
@@ -29,13 +30,13 @@ Then start the containers with:
 ```bash
 docker-compose up -d --build 
 ```
-(-d for detached mode, --build to build the underlying mlflow and nginx
-containers if needed.)  The first time will download/build the containers,
-but after that it will generate output similar to this:
+(-d for detached mode, --build to build the underlying containers if needed)
+The first time will download/build the containers, but after that it will
+generate output similar to this:
 ```bash
-aganse docker_mlflow_db_nginx  (master *) 14:12:27> docker-compose up -d --build
-Creating network "docker_mlflow_db_nginx_backend" with driver "bridge"
-Creating network "docker_mlflow_db_nginx_frontend" with driver "bridge"
+aganse docker_mlflow_db  (master *) 14:12:27> docker-compose up -d --build
+Creating network "docker_mlflow_db_backend" with driver "bridge"
+Creating network "docker_mlflow_db_frontend" with driver "bridge"
 Building web
 Step 1/2 : FROM python:3.7-slim-buster
  ---> d3fbf7fff365
@@ -67,7 +68,7 @@ Creating mlflow_nginx  ... done
 
 We can verify it's all up and ready via:
 ```bash
-aganse docker_mlflow_db_nginx  (master *) 14:12:36> docker ps
+aganse docker_mlflow_db  (master *) 14:12:36> docker ps
 CONTAINER ID        IMAGE                       COMMAND                  CREATED             STATUS                            PORTS                 NAMES
 9e645787e83e        mlflow_nginx                "nginx -g 'daemon of…"   9 seconds ago       Up 8 seconds                      0.0.0.0:80->80/tcp    mlflow_nginx
 84e63be6f8fc        mlflow_server               "mlflow server --bac…"   9 seconds ago       Up 8 seconds                      5050/tcp              mlflow_server
@@ -76,7 +77,7 @@ f615c7b3d367        mysql/mysql-server:5.7.28   "/entrypoint.sh mysq…"   9 sec
 
 And to shut it all down:
 ```bash
-aganse docker_mlflow_db_nginx  (master *) 14:16:51> docker-compose down
+aganse docker_mlflow_db  (master *) 14:16:51> docker-compose down
 Stopping mlflow_nginx  ... done
 Stopping mlflow_db     ... done
 Stopping mlflow_server ... done
