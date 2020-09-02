@@ -1,9 +1,10 @@
-# Have the following environment vars set in shell running docker-compose:
-# DB_NAME
-# DB_USER      # postgres admin user
-# DB_PW        # postgres admin user's pw
-# DB_PORT
-# MLFLOW_PORT
+# Have the following environment vars set in shell before running docker-compose
+# (suggested values here but can use whatever desired):
+# export DB_NAME=mlflowdb
+# export DB_USER=postgres        # postgres admin user
+# export DB_PW=<somepassword>    # postgres admin pw (change to real one!)
+# export DB_PORT=5432
+# export MLFLOW_PORT=5001
 
 version: '3.3'
 
