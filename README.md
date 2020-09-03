@@ -7,7 +7,7 @@ Originally based on [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
 "Deploy MLflow with docker compose"]
 (https://towardsdatascience.com/deploy-mlflow-with-docker-compose-8059f16b6039),
 with some changes to:
-* replace AWS usage with local mapping for artifact store (done)
+* replace AWS usage with local mapping for artifact store
 * replace mysql with postgresql and other options.
 * use nginx to apply htpasswd access control to mlflow website, or leave out.
 
@@ -45,7 +45,7 @@ export DB_PORT=5432
 export DB_USER=postgres
 export DB_PW=<somepassword>        # (choose an actual pw)
 ```
-(or you can put these into an .env file without the 'export's.)  Warning:
+(or you can put these into an .env file without the `export`s.)  Warning:
 there's a security issue there with putting password in environment variable,
 as one can interrogate the Linux process list and/or the Docker inspect
 output and see it.  But typical use-case here is individual or small-group
@@ -56,20 +56,18 @@ Anyhow, start the containers with:
 ```bash
 docker-compose up -d --build 
 ```
-(-d for detached mode, --build to build the underlying containers if needed)
+(`-d` for detached mode, `--build` to build the underlying containers if needed)
 The first time will download/build the containers, but after that it will
 generate output similar to the below, which can be seen via
 ```bash
 docker-compose logs -f
 ```
-where the -f acts like in `tail -f`, allowing open-ended streaming of the
+where the `-f` acts like in `tail -f`, allowing open-ended streaming of the
 new additions to the logs.  `Docker-compose logs` is like `docker logs` but
 puts the logs from the different containers started by docker-compose all
-together.
-
+together.  The logs output looks like this:
 
 ```bash
-docker_mlflow_db 00:29:37> docker-compose up --build
 Creating network "docker_mlflow_db_mydefault" with driver "bridge"
 Creating volume "docker_mlflow_db_db_datapg" with default driver
 Creating volume "docker_mlflow_db_mlrun_data" with default driver
@@ -180,10 +178,12 @@ CONTAINER ID        IMAGE               COMMAND                  CREATED        
 
 While it's up we can access the MLFlow website via http://localhost:5001 and its database directly via:
 ```bash
-make psqld   # which calls psql within the container
+make psqld   # which simply calls psql within the container
 ```
+The makefile also contains macros to start various containers individually,
+which I mainly use for debugging.
 
-Shut it all down via:
+Shut the docker-compose all down via:
 ```bash
 docker_mlflow_db 00:33:26> docker-compose down --volumes
 Stopping mlflow_server ... done
