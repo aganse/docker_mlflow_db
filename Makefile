@@ -1,18 +1,21 @@
 # Makefile for docker/mlflow/db/etc setup...
 
-DBCONNECT="postgresql://${DB_USER}:${DB_PW}@172.17.0.1:${DB_PORT}/${DB_NAME}"
-ARTIFACTS="/mlruns"
+#GWHOST=$(shell docker inspect -f '{{ .NetworkSettings.Networks.docker_mlflow_db_default.Gateway }}' mlflow_db)
+GWHOST=172.22.0.1
+DBCONNECT=postgresql://${DB_USER}:${DB_PW}@${GWHOST}:${DB_PORT}/${DB_NAME}
+ARTIFACTS=/mlruns
 
-db:
-	docker run -p 5432:5432 -v db_datapg:/var/lib/postgresql/data \
+pgdb:
+	@docker run -p ${DB_PORT}:${DB_PORT} -v db_datapg:/var/lib/postgresql/data \
 	    -e POSTGRES_DB=${DB_NAME} -e POSTGRES_USER=${DB_USER} -e POSTGRES_PASSWORD=${DB_PW} \
 	    postgres:latest
 
 psqld:
-	docker run -it postgres:latest sh -c "exec psql ${DBCONNECT}"
+	psql postgresql://${DB_USER}:${DB_PW}@localhost:${DB_PORT}/${DB_NAME}
+	#@docker run -it postgres:latest /usr/bin/psql ${DBCONNECT}
 
 mlflowd:
-	docker run -v mlrun_data:/mlruns -p ${MLFLOW_PORT}:${MLFLOW_PORT} mlflow_server \
+	@docker run -v mlrun_data:/mlruns -p ${MLFLOW_PORT}:${MLFLOW_PORT} mlflow_server \
 	    mlflow server \
 	        --host 0.0.0.0 \
 		--port ${MLFLOW_PORT} \

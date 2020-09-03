@@ -1,46 +1,24 @@
 # Have the following environment vars set in shell before running docker-compose
 # (suggested values here but can use whatever desired):
 # export DB_NAME=mlflowdb
-# export DB_USER=mluser
-# export DB_PW=<somepassword>
-# export DB_ROOTPW=<someotherpassword>
-#
-# AWS S3 bucket can be used instead of local drive for artifacts store via
-# commented-out environment lines below.
+# export MLFLOW_PORT=5001
 
 version: '3.3'
 
 services:
-    db:
-        restart: always
-        image: postgres:latest
-        container_name: mlflow_db
-        networks:
-            - mydefault
-        expose:
-            - ${DB_PORT}
-        ports:
-            - "${DB_PORT}:${DB_PORT}"
-        environment:
-            - POSTGRES_DB=${DB_NAME}
-            - POSTGRES_USER=${DB_USER}
-            - POSTGRES_PASSWORD=${DB_PW}
-        volumes:
-            - db_datapg:/var/lib/postgresql/data
-
     app:
         restart: always
         build: ./mlflow
         image: mlflow_server
         container_name: mlflow_server
-        networks:
-            - mydefault
+        # networks:
+        #     - frontend
         expose:
             - ${MLFLOW_PORT}
         ports:
             - "${MLFLOW_PORT}:${MLFLOW_PORT}"
         environment:
-            - BACKEND=postgresql://${DB_USER}:${DB_PW}@db:${DB_PORT}/${DB_NAME}
+            - BACKEND=sqlite:///db/${DB_NAME}.db
             - ARTIFACTS=/mlruns
           # For artifact store in AWS S3 (note boto was installed in container):
           #  - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -49,6 +27,7 @@ services:
           #  - ARTIFACTS="s3://mlflow_bucket/mlflow/"
         volumes:
             - mlrun_data:/mlruns
+            - sqlitedb_data:/db
 
         command: 
             - sh    # (sh allows for var substitution of BACKEND and ARTIFACTS)
@@ -58,15 +37,27 @@ services:
                 --host 0.0.0.0 
                 --backend-store-uri $${BACKEND} 
                 --default-artifact-root $${ARTIFACTS}
-        depends_on:
-            - db
 
+    # still useful if we tweak to handle htpasswd basic authentication to gate users
+    # nginx:
+        # restart: always
+        # build: ./nginx
+        # image: mlflow_nginx
+        # container_name: mlflow_nginx
+        # ports:
+            # - "80:80"
+        # networks:
+            # - frontend
+            # - backend
+        # depends_on:
+            # - app
 
-
-networks:
-    mydefault:
-        driver: bridge
-
+# networks:
+#     frontend:
+#         driver: bridge
+#     backend:
+#         driver: bridge
+    
 volumes:
-    db_datapg:
     mlrun_data:
+    sqlitedb_data:

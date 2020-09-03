@@ -1,3 +1,13 @@
+# Have the following environment vars set in shell before running docker-compose
+# (suggested values here but can use whatever desired):
+# export DB_NAME=mlflowdb
+# export DB_USER=mluser
+# export DB_PW=<somepassword>
+# export DB_ROOTPW=<someotherpassword>
+#
+# AWS S3 bucket can be used instead of local drive for artifacts store via
+# commented-out environment lines below.
+
 version: '3.3'
 
 services:
@@ -5,38 +15,57 @@ services:
         restart: always
         image: postgres:latest
         container_name: mlflow_db
+        networks:
+            - mydefault
         expose:
-            - "5432"
+            - ${DB_PORT}
         ports:
-            - "5432:5432"
+            - "${DB_PORT}:${DB_PORT}"
         environment:
             - POSTGRES_DB=${DB_NAME}
-            - POSTGRES_USER=${DB_USER}    # postgres admin user
-            - POSTGRES_PASSWORD=${DB_PW}  # admin password
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PW}
         volumes:
             - db_datapg:/var/lib/postgresql/data
-        # Future step:
-        # let's put this postgres image in a container defined in a subdir
-        # after all and add some lines in its Dockerfile that run PG routines
-        # to add/config an mlflow user so we're not using postgres admin/owner
-        # account for mlflow...
 
     app:
         restart: always
         build: ./mlflow
         image: mlflow_server
         container_name: mlflow_server
+        networks:
+            - mydefault
         expose:
-            - "5000"
+            - ${MLFLOW_PORT}
         ports:
-          - "5000:5000"
+            - "${MLFLOW_PORT}:${MLFLOW_PORT}"
         environment:
-          - DB_CONNECT="postgresql://${DB_USER}:${DB_PW}@db:5432/${DB_NAME}"
+            - BACKEND=postgresql://${DB_USER}:${DB_PW}@db:${DB_PORT}/${DB_NAME}
+            - ARTIFACTS=/mlruns
+          # For artifact store in AWS S3 (note boto was installed in container):
+          #  - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          #  - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+          #  - ARTIFACTS="s3://mlflow_bucket/mlflow/"
         volumes:
             - mlrun_data:/mlruns
-        command: mlflow server --host 0.0.0.0 --backend-store-uri ${DB_CONNECT} --default-artifact-root /mlruns
+
+        command: 
+            - sh    # (sh allows for var substitution of BACKEND and ARTIFACTS)
+            - -c
+            - mlflow server 
+                --port ${MLFLOW_PORT} 
+                --host 0.0.0.0 
+                --backend-store-uri $${BACKEND} 
+                --default-artifact-root $${ARTIFACTS}
         depends_on:
             - db
+
+
+
+networks:
+    mydefault:
+        driver: bridge
 
 volumes:
     db_datapg:

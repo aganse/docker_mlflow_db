@@ -1,19 +1,17 @@
 # Have the following environment vars set in shell before running docker-compose
 # (suggested values here but can use whatever desired):
 # export DB_NAME=mlflowdb
-# export DB_USER=mluser
-# export DB_PW=<somepassword>
-# export DB_ROOTPW=<someotherpassword>
-#
-# AWS S3 bucket can be used instead of local drive for artifacts store via
-# commented-out environment lines below.
+# export DB_USER=postgres        # postgres admin user
+# export DB_PW=<somepassword>    # postgres admin pw (change to real one!)
+# export DB_PORT=5432
+# export MLFLOW_PORT=5001
 
 version: '3.3'
 
 services:
     db:
         restart: always
-        image: postgres:latest
+        image: mysql/mysql-server:5.7.28
         container_name: mlflow_db
         networks:
             - mydefault
@@ -22,11 +20,12 @@ services:
         ports:
             - "${DB_PORT}:${DB_PORT}"
         environment:
-            - POSTGRES_DB=${DB_NAME}
-            - POSTGRES_USER=${DB_USER}
-            - POSTGRES_PASSWORD=${DB_PW}
+            - MYSQL_DATABASE=${DB_NAME}
+            - MYSQL_USER=${DB_USER}
+            - MYSQL_PASSWORD=${DB_PW}
+            - MYSQL_ROOT_PASSWORD=${DB_ROOTPW}
         volumes:
-            - db_datapg:/var/lib/postgresql/data
+            - db_datams:/var/lib/mysql
 
     app:
         restart: always
@@ -40,7 +39,7 @@ services:
         ports:
             - "${MLFLOW_PORT}:${MLFLOW_PORT}"
         environment:
-            - BACKEND=postgresql://${DB_USER}:${DB_PW}@db:${DB_PORT}/${DB_NAME}
+            - BACKEND=mysql+pymysql://${DB_USER}:${DB_PW}@db:${DB_PORT}/${DB_NAME}
             - ARTIFACTS=/mlruns
           # For artifact store in AWS S3 (note boto was installed in container):
           #  - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
@@ -49,7 +48,6 @@ services:
           #  - ARTIFACTS="s3://mlflow_bucket/mlflow/"
         volumes:
             - mlrun_data:/mlruns
-
         command: 
             - sh    # (sh allows for var substitution of BACKEND and ARTIFACTS)
             - -c
@@ -61,12 +59,22 @@ services:
         depends_on:
             - db
 
-
+    # nginx:
+        # restart: always
+        # build: ./nginx
+        # image: mlflow_nginx
+        # container_name: mlflow_nginx
+        # ports:
+            # - "80:80"
+        # networks:
+            # - frontend
+        # depends_on:
+            # - web
 
 networks:
     mydefault:
         driver: bridge
 
 volumes:
-    db_datapg:
+    db_datams:
     mlrun_data:
