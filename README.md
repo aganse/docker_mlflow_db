@@ -9,7 +9,7 @@ Originally based on [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
 with some changes to:
 * replace AWS usage with local mapping for artifact store (done)
 * replace mysql with postgresql and other options.
-3. use nginx to apply htpasswd access control to mlflow website
+* use nginx to apply htpasswd access control to mlflow website, or leave out.
 
 and overall allowing me to quickly clone to to wherever I'm working.
 
@@ -29,8 +29,8 @@ DBADMIN_PW as well as MLFLOW_USER and MLFLOW_PW.
 
 ### To run:
 Set the following env vars in shell first (these are listed in comments at
-top of the docker-compose.yaml files).  Set them as desired for your own
-system.  These (and the example output below) correspond to the
+top of the docker-compose.yaml files); set as desired for your own system.
+These (and the example output below) correspond to the
 docker-compose.mlflow_postgres.yaml file in compose_variations; that's
 what the root dir's docker-compose.yaml file is by default, running mlflow
 with its backend store in postgresql and its artifact store in a local
@@ -45,9 +45,14 @@ export DB_PORT=5432
 export DB_USER=postgres
 export DB_PW=<somepassword>        # (choose an actual pw)
 ```
-(or you can put these into an .env file without the 'export's...)
+(or you can put these into an .env file without the 'export's.)  Warning:
+there's a security issue there with putting password in environment variable,
+as one can interrogate the Linux process list and/or the Docker inspect
+output and see it.  But typical use-case here is individual or small-group
+usage contained inside a company's internal network behind a firewall, so
+not at the top of my concern list.  Please beware of use-cases beyond that.
 
-Then start the containers with:
+Anyhow, start the containers with:
 ```bash
 docker-compose up -d --build 
 ```
@@ -58,7 +63,9 @@ generate output similar to the below, which can be seen via
 docker-compose logs -f
 ```
 where the -f acts like in `tail -f`, allowing open-ended streaming of the
-new additions to the logs.
+new additions to the logs.  `Docker-compose logs` is like `docker logs` but
+puts the logs from the different containers started by docker-compose all
+together.
 
 
 ```bash
