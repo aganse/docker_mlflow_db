@@ -1,9 +1,10 @@
 # Have the following environment vars set in shell before running docker-compose
 # (suggested values here but can use whatever desired):
 # export DB_NAME=mlflowdb
-# export DB_USER=mluser
+# export DB_USER=postgres
 # export DB_PW=<somepassword>
-# export DB_ROOTPW=<someotherpassword>
+# export DB_PORT=5432
+# export MLFLOW_PORT=5001
 #
 # AWS S3 bucket can be used instead of local drive for artifacts store via
 # commented-out environment lines below.

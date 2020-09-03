@@ -3,20 +3,22 @@ A docker-compose setup to quickly provide MlFlow service with database backend
 and potentially reverse proxy frontend for authentication.
 
 ### Summary:
-Loosely based on [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
+Originally based on [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
 "Deploy MLflow with docker compose"]
 (https://towardsdatascience.com/deploy-mlflow-with-docker-compose-8059f16b6039),
-with a few changes to:
-1. replace AWS usage with local mapping for artifact store (done)
-2. replace mysql with postgresql.
+with some changes to:
+* replace AWS usage with local mapping for artifact store (done)
+* replace mysql with postgresql and other options.
 3. use nginx to apply htpasswd access control to mlflow website
-and allowing me to quickly clone to to wherever I'm working.
 
-Also may incorporate additional bits and pieces from these and others:
-https://github.com/ymym3412/mlflow-docker-compose
-https://medium.com/vantageai/keeping-your-ml-model-in-shape-with-kafka-airflow-and-mlflow-143d20024ba6
+and overall allowing me to quickly clone to to wherever I'm working.
 
-Future Todos:
+There are several docker-compose.yaml files in the compose_variations
+subdirectory, any of which can be copied onto the docker-compose.yaml in the
+root directory to use the desired variation.  I'm sure there's a better way
+to do that.  :-)
+
+Future To-dos:
 * Add check for whether the env vars are set in shell (or .env file)
 before kicking off container - this ia a mistake I comment make myself.
 * Let's put this postgres image in a new container defined in a subdir
@@ -26,13 +28,24 @@ admin/owner account for mlflow.  Then we'd have DBADMIN_USER and
 DBADMIN_PW as well as MLFLOW_USER and MLFLOW_PW.
 
 ### To run:
-Set the following env vars in shell first:
+Set the following env vars in shell first (these are listed in comments at
+top of the docker-compose.yaml files).  Set them as desired for your own
+system.  These (and the example output below) correspond to the
+docker-compose.mlflow_postgres.yaml file in compose_variations; that's
+what the root dir's docker-compose.yaml file is by default, running mlflow
+with its backend store in postgresql and its artifact store in a local
+docker volume.  The database is accessible on the host network rather
+than hidden on a backend network (as in other variations in the subdir)
+to allow me to directly access the database to view results through 
+alternate means than the mlflow website.
 ```bash
-export DB_NAME='mlflowdb'
-export DB_USER='postgres'
-export DB_PW='<mypassword>'        # (choose an actual pw)
+export MLFLOW_PORT=5001
+export DB_NAME=mlflowdb
+export DB_PORT=5432
+export DB_USER=postgres
+export DB_PW=<somepassword>        # (choose an actual pw)
 ```
-(or you can use these into an .env file without the 'export's...)
+(or you can put these into an .env file without the 'export's...)
 
 Then start the containers with:
 ```bash
@@ -40,9 +53,16 @@ docker-compose up -d --build
 ```
 (-d for detached mode, --build to build the underlying containers if needed)
 The first time will download/build the containers, but after that it will
-generate output similar to this:
+generate output similar to the below, which can be seen via
 ```bash
-docker_mlflow_db  (master *) 00:29:37> docker-compose up --build
+docker-compose logs -f
+```
+where the -f acts like in `tail -f`, allowing open-ended streaming of the
+new additions to the logs.
+
+
+```bash
+docker_mlflow_db 00:29:37> docker-compose up --build
 Creating network "docker_mlflow_db_mydefault" with driver "bridge"
 Creating volume "docker_mlflow_db_db_datapg" with default driver
 Creating volume "docker_mlflow_db_mlrun_data" with default driver
@@ -145,7 +165,7 @@ mlflow_server | [2020-09-03 07:29:44 +0000] [15] [INFO] Booting worker with pid:
 
 We can verify it's all up and ready via:
 ```bash
-docker_mlflow_db  (master *) 00:10:10> docker ps
+docker_mlflow_db 00:10:10> docker ps
 CONTAINER ID        IMAGE               COMMAND                  CREATED             STATUS              PORTS                    NAMES
 22900b897469        mlflow_server       "sh -c 'mlflow serve…"   2 minutes ago       Up 2 minutes        0.0.0.0:5001->5001/tcp   mlflow_server
 8d452ae5dcb5        postgres:latest     "docker-entrypoint.s…"   2 minutes ago       Up 2 minutes        0.0.0.0:5432->5432/tcp   mlflow_db
@@ -158,7 +178,7 @@ make psqld   # which calls psql within the container
 
 Shut it all down via:
 ```bash
-docker_mlflow_db  (master *) 00:33:26> docker-compose down --volumes
+docker_mlflow_db 00:33:26> docker-compose down --volumes
 Stopping mlflow_server ... done
 Stopping mlflow_db     ... done
 Removing mlflow_server ... done
@@ -167,3 +187,9 @@ Removing network docker_mlflow_db_mydefault
 Removing volume docker_mlflow_db_db_datapg
 Removing volume docker_mlflow_db_mlrun_data
 ```
+
+### Other relevant links:
+
+https://github.com/ymym3412/mlflow-docker-compose  
+https://medium.com/vantageai/keeping-your-ml-model-in-shape-with-kafka-airflow-and-mlflow-143d20024ba6  
+
