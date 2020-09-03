@@ -1,4 +1,8 @@
-Bit of a work in progress - goal is to have these files here as ready-to-go variations for different db's and configs.  But in practice I just sortof fix them up each time as I need them.  Want to save in here the variation where nginx acts as the reverse proxy gating user access to mlflow website via htpasswd.
+Bit of a work in progress - goal is to have these files here as ready-to-go
+variations for different db's and configs.  But in practice I just sortof
+fix them up each time as I need them.  Want to save in here the variation
+where nginx acts as the reverse proxy gating user access to mlflow website
+via htpasswd.
 
 
 | file                               | confirmed working |

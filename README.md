@@ -16,8 +16,10 @@ Also may incorporate additional bits and pieces from these and others:
 https://github.com/ymym3412/mlflow-docker-compose
 https://medium.com/vantageai/keeping-your-ml-model-in-shape-with-kafka-airflow-and-mlflow-143d20024ba6
 
-Future Todo:
-Let's put this postgres image in a new container defined in a subdir
+Future Todos:
+* Add check for whether the env vars are set in shell (or .env file)
+before kicking off container - this ia a mistake I comment make myself.
+* Let's put this postgres image in a new container defined in a subdir
 after all, and add some lines in its Dockerfile that run PG cmdline
 routines to add/config an mlflow user so we're not using postgres
 admin/owner account for mlflow.  Then we'd have DBADMIN_USER and
