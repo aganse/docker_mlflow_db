@@ -1,6 +1,6 @@
 # docker_mlflow_db
 A docker-compose setup to quickly provide MlFlow service with database backend
-and potentially reverse proxy frontend for authentication.
+and reverse proxy frontend which can optionally allow for basic authentication.
 
 ### Summary:
 Originally based on [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
@@ -9,35 +9,41 @@ Originally based on [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
 with some changes to:
 * replace AWS usage with local mapping for artifact store
 * replace mysql with postgresql and other options.
-* use nginx to apply htpasswd access control to mlflow website, or leave out.
+* optionally apply htpasswd access control to mlflow website via nginx frontend
 
-and overall allowing me to quickly clone to to wherever I'm working.
+and overall allowing me to quickly clone to to wherever I'm working whereas the
+original was just a web article.
 
 There are several docker-compose.yaml files in the compose_variations
-subdirectory, any of which can be copied onto the docker-compose.yaml in the
-root directory to use the desired variation.  I'm sure there's a better way
-to do that.  :-)
+subdirectory, any of which can be in lieu of the docker-compose.yaml in the
+root directory to use the desired variation.  The docker-compose.yaml file is
+a copy of compose_variations/docker-compose.mlflow_postgres_nginx.yaml.
 
 Future To-dos:
 * Add check for whether the env vars are set in shell (or .env file)
 before kicking off container - this ia a mistake I comment make myself.
-* Let's put this postgres image in a new container defined in a subdir
-after all, and add some lines in its Dockerfile that run PG cmdline
-routines to add/config an mlflow user so we're not using postgres
-admin/owner account for mlflow.  Then we'd have DBADMIN_USER and
-DBADMIN_PW as well as MLFLOW_USER and MLFLOW_PW.
+* Add dockerfile ARGS to pass MLFLOW_PORT as well as boolean option to use an
+htpasswd file into the nginx container.  The former really is only useful for
+the case without nginx reverse proxy.  The latter implements steps I've
+been setting up manually meanwhile, but really only limits scope within an
+already-firewalled company (it's not secure), mainly to prevent inadvertent
+deletes by curious browsing colleagues.  Finding better way to limit such
+actions by user (especially deletes/changes) would be ideal.
+* As a first step on that last sentence, let's put the postgres image into
+a new container defined in a subdir after all, and add some lines in its
+Dockerfile that run PG cmdline routines to add/config an mlflow user so
+we're not using postgres admin/owner account for mlflow.  Then we'd have
+DBADMIN_USER and DBADMIN_PW as well as MLFLOW_USER and MLFLOW_PW.
 
 ### To run:
-Set the following env vars in shell first (these are listed in comments at
+First set the following env vars in shell (these are listed in comments at
 top of the docker-compose.yaml files); set as desired for your own system.
 These (and the example output below) correspond to the
-docker-compose.mlflow_postgres.yaml file in compose_variations; that's
+docker-compose.mlflow_postgres_nginx.yaml file in compose_variations; that's
 what the root dir's docker-compose.yaml file is by default, running mlflow
 with its backend store in postgresql and its artifact store in a local
-docker volume.  The database is accessible on the host network rather
-than hidden on a backend network (as in other variations in the subdir)
-to allow me to directly access the database to view results through 
-alternate means than the mlflow website.
+docker volume.  The database is hidden on a backend network, and the mlflow
+contents are viewable via website or REST API.
 ```bash
 export MLFLOW_PORT=5001
 export DB_NAME=mlflowdb

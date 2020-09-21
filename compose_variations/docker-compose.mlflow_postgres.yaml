@@ -1,3 +1,6 @@
+# This version exposes the underlying postgres database as well as the mlflow
+# server, so we can access the database contents directly.
+# 
 # Have the following environment vars set in shell before running docker-compose
 # (suggested values here but can use whatever desired):
 # export DB_NAME=mlflowdb
@@ -16,10 +19,10 @@ services:
         restart: always
         image: postgres:latest
         container_name: mlflow_db
-        networks:
-            - mydefault
         expose:
             - ${DB_PORT}
+        networks:
+            - mydefault
         ports:
             - "${DB_PORT}:${DB_PORT}"
         environment:

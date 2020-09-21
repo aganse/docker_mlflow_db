@@ -1,3 +1,6 @@
+# This version exposes the underlying mysql database as well as the mlflow                                                                       
+# server, so we can access the database contents directly. 
+#
 # Have the following environment vars set in shell before running docker-compose
 # (suggested values here but can use whatever desired):
 # export DB_NAME=mlflowdb
@@ -6,6 +9,9 @@
 # export DB_ROOTPW=<someotherpassword>
 # export DB_PORT=3306
 # export MLFLOW_PORT=5001
+#
+# AWS S3 bucket can be used instead of local drive for artifacts store via
+# commented-out environment lines below.
 
 version: '3.3'
 
