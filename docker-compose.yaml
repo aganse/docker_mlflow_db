@@ -25,6 +25,8 @@ services:
         networks:
             - backend
         environment:
+            - MUID=$UID
+            - MGID=$GID
             - POSTGRES_DB=${DB_NAME}
             - POSTGRES_USER=${DB_USER}
             - POSTGRES_PASSWORD=${DB_PW}
