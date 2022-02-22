@@ -11,17 +11,21 @@ with some changes to:
 * replace mysql with postgresql and other options.
 * optionally apply htpasswd access control to mlflow website via nginx frontend
 
-and overall allowing me to quickly clone to to wherever I'm working whereas the
+and overall allowing me to quickly clone to wherever I'm working whereas the
 original was just a web article.
 
 There are several docker-compose.yaml files in the compose_variations
 subdirectory, any of which can be in lieu of the docker-compose.yaml in the
 root directory to use the desired variation.  The docker-compose.yaml file is
-a copy of compose_variations/docker-compose.mlflow_postgres_nginx.yaml.
+a copy of compose_variations/docker-compose.mlflow_postgres_nginx.yaml.  Only
+this docker-compose.yaml is necessarily fully up-to-date and tested, but
+brief comparisons with the other files should make pretty clear what to update
+if necessary.
+
 
 Future To-dos:
 * Add check for whether the env vars are set in shell (or .env file)
-before kicking off container - this ia a mistake I comment make myself.
+before kicking off container - this ia a mistake I regularly make myself.
 * Add dockerfile ARGS to pass MLFLOW_PORT as well as boolean option to use an
 htpasswd file into the nginx container.  The former really is only useful for
 the case without nginx reverse proxy.  The latter implements steps I've
@@ -45,7 +49,7 @@ with its backend store in postgresql and its artifact store in a local
 docker volume.  The database is hidden on a backend network, and the mlflow
 contents are viewable via website or REST API.
 ```bash
-export MLFLOW_PORT=5001
+export MLFLOW_PORT=5000
 export DB_NAME=mlflowdb
 export DB_PORT=5432
 export DB_USER=postgres
@@ -71,7 +75,11 @@ docker-compose logs -f
 where the `-f` acts like in `tail -f`, allowing open-ended streaming of the
 new additions to the logs.  `Docker-compose logs` is like `docker logs` but
 puts the logs from the different containers started by docker-compose all
-together.  The logs output looks like this:
+together.  The logs output looks like the following.
+(edit: the below example output was generated before the nginx reverse
+proxy was added in front of mlflow, so you'll now see some nginx references
+in the modern equivalent to the below; i'll update this example soon to
+match.)
 
 ```bash
 Creating network "docker_mlflow_db_mydefault" with driver "bridge"
@@ -205,4 +213,6 @@ Removing volume docker_mlflow_db_mlrun_data
 
 https://github.com/ymym3412/mlflow-docker-compose  
 https://medium.com/vantageai/keeping-your-ml-model-in-shape-with-kafka-airflow-and-mlflow-143d20024ba6  
-
+https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/
+https://www.digitalocean.com/community/tutorials/how-to-set-up-password-authentication-with-nginx-on-ubuntu-14-04
+https://www.digitalocean.com/community/tutorials/how-to-set-up-http-authentication-with-nginx-on-ubuntu-12-10

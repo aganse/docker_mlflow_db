@@ -11,10 +11,15 @@
 
 ARTIFACTS=/mlruns   # inside mlflowd container
 # MLGWHOST only relevant to mlflowpopulate and assumes mlflow container running:
-MLGWHOST=$(shell docker inspect -f '{{ .NetworkSettings.Networks.docker_mlflow_db_mydefault.Gateway }}' mlflow_server)
+MLGWHOST=$(shell docker inspect -f '{{ .NetworkSettings.Networks.docker_mlflow_db_frontend.Gateway }}' mlflow_server)
+#MLGWHOST=host.docker.internal  # for macos with Docker Desktop
 # DBGWHOST and DBCONNECT assume db container running, relevant to psqld and mlflowd:
 DBGWHOST=$(shell docker inspect -f '{{ .NetworkSettings.Networks.docker_mlflow_db_mydefault.Gateway }}' mlflow_db)
 DBCONNECT=postgresql://${DB_USER}:${DB_PW}@${DBGWHOST}:${DB_PORT}/${DB_NAME}
+
+clean:
+	docker volume rm docker_mlflow_db_mlrun_data
+	docker volume rm docker_mlflow_db_db_datapg
 
 pgdb:
 	# Run postgres db on its own from container
