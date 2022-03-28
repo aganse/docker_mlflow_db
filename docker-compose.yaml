@@ -53,12 +53,12 @@ services:
           #  - ARTIFACTS="s3://mlflow_bucket/mlflow/"
         volumes:
             - mlrun_data:/mlruns
-
+            - condenv:/opt/conda
         command: 
             - sh    # (sh allows for var substitution of BACKEND and ARTIFACTS)
             - -c
             - mlflow server 
-                --port 5001
+                --port 5001  # port inside container, different from $MLFLOW_PORT
                 --host 0.0.0.0 
                 --backend-store-uri $${BACKEND} 
                 --default-artifact-root $${ARTIFACTS}
@@ -86,3 +86,4 @@ networks:
 volumes:
     db_datapg:
     mlrun_data:
+    condenv:

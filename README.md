@@ -1,6 +1,6 @@
 # docker_mlflow_db
 A docker-compose setup to quickly provide MlFlow service with database backend
-and reverse proxy frontend which can optionally allow for basic authentication.
+and a reverse proxy frontend which can optionally allow for basic authentication.
 
 ### Summary:
 Originally based on [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
