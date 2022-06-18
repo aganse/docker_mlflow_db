@@ -58,7 +58,7 @@ services:
             - sh    # (sh allows for var substitution of BACKEND and ARTIFACTS)
             - -c
             - mlflow server 
-                --port 5001  # port inside container, different from $MLFLOW_PORT
+                --port 5001
                 --host 0.0.0.0 
                 --backend-store-uri $${BACKEND} 
                 --default-artifact-root $${ARTIFACTS}
