@@ -134,3 +134,8 @@ https://medium.com/vantageai/keeping-your-ml-model-in-shape-with-kafka-airflow-a
 https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/
 https://www.digitalocean.com/community/tutorials/how-to-set-up-password-authentication-with-nginx-on-ubuntu-14-04
 https://www.digitalocean.com/community/tutorials/how-to-set-up-http-authentication-with-nginx-on-ubuntu-12-10
+
+
+### Infrastructure model
+
+![Infrastructure model](.infragenie/infrastructure_model.png)
