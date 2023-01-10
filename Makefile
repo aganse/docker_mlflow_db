@@ -9,7 +9,7 @@
 # Note sortof hardwired choice of postgres db in this makefile corresponding to
 # the default docker-compose.yaml file in root dir.
 
-ARTIFACTS=/mlruns   # inside mlflowd container
+ARTIFACTS=/storage/mlflow_runs   # inside mlflowd container
 # MLGWHOST only relevant to mlflowpopulate and assumes mlflow container running:
 MLGWHOST=$(shell docker inspect -f '{{ .NetworkSettings.Networks.docker_mlflow_db_mydefault.Gateway }}' mlflow_server)
 # DBGWHOST and DBCONNECT assume db container running, relevant to psqld and mlflowd:
