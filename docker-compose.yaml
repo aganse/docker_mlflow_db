@@ -2,34 +2,36 @@
 # different from the frontend network on which nginx interfaces mlflow.
 # And mlflow is hidden behind nginx, allowing user auth to be implemented.
 # 
-# Have the following environment vars set in shell before running docker-compose
-# (suggested values here but can use whatever desired):
+# The following environment vars can be set in the shell before running
+# docker-compose (suggested values here but can use whatever you desire):
 # export DB_NAME=mlflowdb
 # export DB_USER=postgres
-# export DB_PW=<somepassword>
+# export DB_PW=changethispassword!
 # export DB_PORT=5432
 # export MLFLOW_PORT=5000
+# Those defaults are set automatically so you only need specify the ones you
+# want to change - eg a new DB_PW value should be set but the rest are optional.
 #
-# AWS S3 bucket can be used instead of local drive for artifacts store via
-# commented-out environment lines below.
+# Note an AWS S3 bucket can be used instead of local drive for the artifacts
+# store, via the commented-out environment lines below.
 
 version: '3.3'
 
 services:
     db:
         restart: always
-        image: postgres:latest
+        image: postgres:13
         container_name: mlflow_db
         expose:
-            - ${DB_PORT}
+            - ${DB_PORT:-5432}
         networks:
             - backend
         environment:
             - MUID=$UID
             - MGID=$GID
-            - POSTGRES_DB=${DB_NAME}
-            - POSTGRES_USER=${DB_USER}
-            - POSTGRES_PASSWORD=${DB_PW}
+            - POSTGRES_DB=${DB_NAME:-mlflowdb}
+            - POSTGRES_USER=${DB_USER:-postgres}
+            - POSTGRES_PASSWORD=${DB_PW:-changethispassword!}
         volumes:
             - db_datapg:/var/lib/postgresql/data
 
@@ -50,7 +52,7 @@ services:
           #  - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
           #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
           #  - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
-          #  - ARTIFACTS="s3://mlflow_bucket/mlflow/"
+          #  - ARTIFACTS="s3://mlflow_bucket/my_mlflow_dir/"
         volumes:
             - mlrun_data:/mlruns
             - condenv:/opt/conda
@@ -71,7 +73,7 @@ services:
         image: mlflow_nginx
         container_name: mlflow_nginx
         ports:
-            - "${MLFLOW_PORT}:80"
+            - "${MLFLOW_PORT:-5000}:80"
         networks:
             - frontend
         depends_on:
