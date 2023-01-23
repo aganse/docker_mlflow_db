@@ -20,6 +20,26 @@
 version: '3.3'
 
 services:
+    # If using external DB_SERVER, comment out this db container
+    db:
+        restart: always
+        image: postgres:13
+        container_name: mlflow_db
+        expose:
+            - ${DB_PORT:-5432}
+        # networks:
+        #     - backend
+        environment:
+            # - MUID=$UID
+            #  - MGID=$GID
+            - POSTGRES_DB=${DB_NAME:-mlflow}
+            - POSTGRES_USER=${DB_USER:-postgres}
+            - POSTGRES_PASSWORD_FILE=/run/secrets/pg_admin_pw
+        secrets:
+            - pg_admin_pw
+        volumes:
+            - db_datapg:/var/lib/postgresql/data
+
     app:
         restart: always
         build: ./mlflow
@@ -31,7 +51,7 @@ services:
         #     - frontend
         #     - backend
         environment:
-          - BACKEND=postgresql://${DB_USER:-mlflow}@${DB_SERVER:-db}:${DB_PORT:-5432}/${DB_NAME:-mlflow}
+          - BACKEND=postgresql://${DB_USER:-postgres}@${DB_SERVER:-db}:${DB_PORT:-5432}/${DB_NAME:-mlflow}
           - ARTIFACTS=/mlruns  # in-container path to filestore in filesys
           # For artifact store in AWS S3 (uses boto that was installed in container):
           # Commment out ARTIFACTS line above and instead use:
@@ -72,6 +92,11 @@ services:
 #     backend:
 #         driver: bridge
 
+secrets:
+    pg_admin_pw:
+        file: ~/.pgadminpw
+
 volumes:
+    db_datapg:
     mlrun_data:
     condenv:

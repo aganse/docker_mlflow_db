@@ -1,15 +1,19 @@
-Bit of a work in progress - goal is to have these files here as ready-to-go
-variations for different db's and configs.  But in practice I just sortof
-fix them up each time as I need them.
+The goal here was to have these files here as ready-to-go variations for
+different DBs and configs.  But fyi in practice I've only actually focused on
+the Postgresql-based scripts, so the sqlite and mysql based scripts may be out
+of date or may need a tweak to work (compare to the postgres ones).
 
 
-| file                               |
--------------------------------------|
-|docker-compose.mlflow_postgres.yaml |
-|docker-compose.mlflow_sqlite.yaml   |
-|docker-compose.orig.yaml            |
-|docker-compose.mlflow_mysql.yaml    |
-|docker-compose.updated_orig.yaml    |
+| file                               | description |
+|------------------------------------|-------------|
+|docker-compose.mlflow_newpostgres.yaml|stand up a new postgres db and connect mlflow to it for backend (repo default)|
+|docker-compose.mlflow_existingpostgres.yaml|connect mlflow to pre-existing postgres mlflow backend database|
+|docker-compose.mlflow_sqlite.yaml   |stand up a new sqlite db and connect mlflow to it for backend|
+|docker-compose.mlflow_mysql.yaml    |stand up a new mysql db and connect mlflow to it for backend|
+|docker-compose.orig.yaml            |original scripts from [Guillaume Androz's 10-Jan-2020 Toward-Data-Science article](https://towardsdatascience.com/deploy-mlflow-with-docker-compose-8059f16b6039) per README.md|
 
 
-Just copy the given file to ../docker-compose.yaml.
+To use one of these just copy it to ../docker-compose.yaml.
+Note the repo's default docker-compose.yaml in its root directory is
+docker-compose.mlflow_newpostgres.yaml to begin with.
+
