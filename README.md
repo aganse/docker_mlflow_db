@@ -15,11 +15,10 @@ with some changes to:
 
 There are several docker-compose.yaml files in the compose_variations
 subdirectory, any of which can be in lieu of the docker-compose.yaml in the
-root directory to use the desired variation.  The docker-compose.yaml file is
-a copy of compose_variations/docker-compose.mlflow_postgres_nginx.yaml.  Only
-this docker-compose.yaml is necessarily fully up-to-date and tested, but
-brief comparisons with the other files should make pretty clear what to update
-if necessary.
+root directory to use the desired variation (although admittedly those others
+might be slightly out of date in comparison, but hopefully at least need only
+minimal tweaks if any).  The docker-compose.yaml file is a copy of
+compose_variations/docker-compose.mlflow_existingpostgres.yaml.
 
 The nginx reverse-proxy on the front end allows use of an htpasswd file in the
 nginx container to provide non-secure, basic logins for workgroup members.  Note
@@ -31,41 +30,35 @@ to prevent inadvertent changes by curious browsing colleagues.
 ### To run and connect to MLflow:
 
 First, there are some env vars which set things like ports and database name
-and so on; these all have defaults when not specified, but it is highly
-recommended that at least the DB_PW (database password) is not left to its
-default value and is rather set by hand - detaled work.
-
-The default env variables run mlflow with its backend store in postgresql and
-its artifact store in a local docker volume.  The database is hidden on a
-backend network, and the mlflow contents are viewable via website or REST API.
+and so on; these all have defaults when not specified, but these are the most
+likely to need setting (typically put into .bashrc).  No environment variables
+contain security credentials - those are in ~/.aws and ~/.pgpass files.
 ```bash
-export MLFLOW_PORT=5000
-export DB_NAME=mlflowdb
-export DB_PORT=5432
-export DB_USER=postgres
-export DB_PW=<somepassword>        # (choose an actual pw)
+export AWS_REGION=us-west-2  # (or whichever region)
+export AWS_S3BUCKETURL=s3://mybucketname/myprefix/
+export DB_SERVER=mydatabaseserver.abcdefghij.us-west-2.rds.amazonaws.com
+export DB_NAME=mlflow2
 ```
-A minor gotcha to note: this `<somepassword>` is expected to have no spaces
-in it, not due to the database used but due to the way I pass it from this
-variable.  Should fix this in future but meanwhile fyi.
 
 *Warning:*
-Also note there's a security issue in general with putting passwords in
-environment variables, as one can interrogate the Linux process list and/or
-the Docker inspect output and see it.  But typical use-case here is individual
-or small-group usage contained inside a company's internal network behind a
-firewall, so not at the top of my concern list.  Please beware for use-cases
-beyond that.
+Even with putting those aws and postgres security credentials in those files,
+it's important to note that this setup is still fundamentally insecure - you
+should either be sure to run this strictly on a secure, company-internal,
+firewalled intranet and/or wrapped within some secure/https, internet-facing
+layer such as aws cloudfront or whatever.
+Overall the typical use-case here is individual or small-group usage contained
+inside a company's internal network behind a firewall, so not at the top of my
+concern list.  Please beware for use-cases beyond that.
 
 Anyhow, start the containers with `make start` or:
 ```bash
-docker-compose up -d --build 
+docker compose up -d --build 
 ```
 (`-d` for detached mode, `--build` to build the underlying containers if needed)
 The first time will download/build the containers, but after that it will
 start back up the existing containers and volumes, as can be seen via
 ```bash
-docker-compose logs -f
+docker compose logs -f
 ```
 
 We can verify it's all up and ready via:
@@ -74,6 +67,7 @@ We can verify it's all up and ready via:
 CONTAINER ID   IMAGE             COMMAND                  CREATED          STATUS          PORTS                                   NAMES
 dc99e6fc8d80   mlflow_nginx      "nginx -g 'daemon of…"   18 minutes ago   Up 18 minutes   0.0.0.0:5000->80/tcp, :::5000->80/tcp   mlflow_nginx
 259ea89f1a9a   mlflow_server     "sh -c 'mlflow serve…"   19 minutes ago   Up 18 minutes   5001/tcp                                mlflow_server
+# [and if running with its own postgres db (as in compose_variations/docker-compose.mlflow_postgres_nginx.yaml)]:
 07bbead3e910   postgres:latest   "docker-entrypoint.s…"   19 minutes ago   Up 19 minutes   5432/tcp                                mlflow_db
 ```
 
@@ -86,23 +80,13 @@ separate terminal:
 ssh -CNL 5000:localhost:5000 <username>@<hostname>
 ```
 will allow you to access the MLFlow website via `http://localhost:5000` locally.
-If running on AWS, that line might look something like:
+If running on AWS, that ssh line might look something like:
 ```bash
 ssh -CNi "~/.ssh/my_awskey.pem" -L 5000:localhost:5000 ec2-user@12.34.56.78
 ```
 
-You can shut the docker-compose all down via `docker-compose down`, or if you
-want the volumes (database and mlflow artifacts stores) entirely deleted too then:
-```bash
-> docker-compose down --volumes
-Stopping mlflow_server ... done
-Stopping mlflow_db     ... done
-Removing mlflow_server ... done
-Removing mlflow_db     ... done
-Removing network docker_mlflow_db_mydefault
-Removing volume docker_mlflow_db_db_datapg
-Removing volume docker_mlflow_db_mlrun_data
-```
+You can shut the docker-compose all down via `make stop` which just runs a
+docker compose down command.
 
 
 ### A few other functionalities to be aware of:

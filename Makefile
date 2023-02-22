@@ -10,7 +10,7 @@ MLFLOW_PORT=5000
 
 ALPHA = 0.0002 0.002 0.02 0.2 2.0 20.0 200.0 2000.0
 L1RATIO = 0.1 0.2 0.3
-EXPT = 'Testing7'
+EXPT = 'Testing1'
 
 start:
 	docker compose up -d --build
