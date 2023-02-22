@@ -4,18 +4,21 @@
 # 
 # The following environment vars can be set in the shell before running
 # docker-compose (default values are these; at minimum change DB_PW).
+# export DB_SERVER=db  # defaults to db container; can replace with ip address
 # export DB_NAME=mlflow
 # export DB_USER=postgres
-# export DB_SERVER=db  # ie defaults to db container; can replace with ip address
-# export PGPASS=~/.pgpass  # path of .pgpass file (contains pw)
+# export PGPASS=~/.pgpass  # path of .pgpass file containing db pw
+# export AWSCREDS=~/.aws   # path of AWS credentials files
 # export DB_PORT=5432
-# export FILESTORE=mlrun_data  # ie defaults to docker volume; can replace with filesys dir
+# export FILESTORE=mlruns_vol  # defaults to docker vol; can replace with dir
 # export MLFLOW_PORT=5000
-# Those defaults are set automatically so you only need specify the ones you
-# want to change - eg a new DB_PW value should be set but the rest are optional.
+# export AWS_S3BUCKETURL=s3://mybucket/myprefix/   # no quotes
+# export AWS_REGION=us-west-2                      # no quotes
+# Those defaults are set automatically - you only need specify the ones you
+# want to change.
 #
-# Note an AWS S3 bucket can be used instead of local drive for the artifacts
-# store, via the commented-out environment lines below.
+# Note artifacts can be stored in an AWS S3 bucket, in a docker volume called
+# mlruns_vol, or a local drive, via choice of the ARTIFACTS_ROOT variable.
 
 version: '3.3'
 
@@ -27,32 +30,28 @@ services:
         container_name: mlflow_server
         expose:
             - 5001
-        # networks:
-        #     - frontend
-        #     - backend
         environment:
-          - BACKEND=postgresql://${DB_USER:-mlflow}@${DB_SERVER:-db}:${DB_PORT:-5432}/${DB_NAME:-mlflow}
-          - ARTIFACTS=/mlruns  # in-container path to filestore in filesys
-          # For artifact store in AWS S3 (uses boto that was installed in container):
-          # Commment out ARTIFACTS line above and instead use:
-          #  - ARTIFACTS="s3://mlflow_bucket/my_mlflow_dir/"
-          #  - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
-          #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
-          #  - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
+            - BACKEND=postgresql://${DB_USER:-mlflow}@${DB_SERVER:-db}:${DB_PORT:-5432}/${DB_NAME:-mlflow}
+          # - ARTIFACTS_ROOT=/mlruns  # for artifact store in locally mapped volume (below)
+            - ARTIFACTS_ROOT=mlflow-artifacts:/  # for artifact store in AWS S3 (or delete this var)
+            - ARTIFACTS_DEST=${AWS_S3BUCKETURL}
+            - AWS_DEFAULT_REGION=${AWS_REGION}
+          # If using AWS the credentials file(s) must be in the .aws directory mapped below.
         volumes:
-            - ${FILESTORE:-mlrun_data}:/mlruns  # can comment out this line if using S3
-            - ${PGPASS:-~/.pgpass}:/root/.pgpass  # provides the pw for BACKEND database
-            - condenv:/opt/conda  # provides continuity/speed when looping runs with same container
+            - ${FILESTORE:-mlruns_vol}:/mlruns  # ignored if using S3
+            - ${PGPASS:-~/.pgpass}:/root/.pgpass  # provides pw for mlflow database, outside of container
+            - ${AWSCREDS:-~/.aws}:/root/.aws  # provides AWS creds, outside of container
+            - condaenv_vol:/opt/conda  # provides continuity/speed when looping runs with same container
         command: 
-            - sh    # (sh allows for var substitution of BACKEND and ARTIFACTS)
+            - sh    # (sh form here allows for var substitution of BACKEND and ARTIFACTS vars)
             - -c
             - mlflow server 
                 --port 5001
                 --host 0.0.0.0 
                 --backend-store-uri $${BACKEND} 
-                --default-artifact-root $${ARTIFACTS}
-        # depends_on:
-        #     - db
+                --default-artifact-root $${ARTIFACTS_ROOT}
+                --artifacts-destination $${ARTIFACTS_DEST}
+                --serve-artifacts
 
     nginx:
         restart: always
@@ -61,17 +60,9 @@ services:
         container_name: mlflow_nginx
         ports:
             - "${MLFLOW_PORT:-5000}:80"
-        # networks:
-        #     - frontend
         depends_on:
             - app
 
-# networks:
-#     frontend:
-#         driver: bridge
-#     backend:
-#         driver: bridge
-
 volumes:
-    mlrun_data:
-    condenv:
+    mlruns_vol:
+    condaenv_vol:
