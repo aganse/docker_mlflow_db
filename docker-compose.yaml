@@ -1,26 +1,45 @@
-# Connect mlflow to a pre-existing database and s3 bucket for all artifacts.
+# This version hides the underlying postgres database on a backend network
+# different from the frontend network on which nginx interfaces mlflow.
+# And mlflow is hidden behind nginx, allowing user auth to be implemented.
 # 
 # The following environment vars can be set in the shell before running
-# docker compose (but typically only set first three, or first and fourth):
-# export MLFLOW_DB_SERVER=db  # defaults to db container; can replace with ip address
-# export MLFLOW_AWS_S3_BUCKET_URL=s3://mybucket/myprefix/   # no quotes
-# export MLFLOW_AWS_REGION=us-west-2                        # no quotes
-# export MLFLOW_FILESTORE=mlruns_vol  # defaults to docker vol; can replace with dir
-# export MLFLOW_DB_NAME=mlflow
-# export MLFLOW_DB_USER=mlflow
-# export MLFLOW_PORT=5000  # port at which browser will find mlflow ui
-# export DB_PORT=5432      # port at which mlflow accesses database
-# export PGPASS=~/.pgpass  # path of .pgpass file containing db pw
-# export AWSCREDS=~/.aws   # path of AWS credentials files
-# Those defaults are set automatically - you only need specify the ones you
-# want to change.
+# docker-compose (default values are these; at minimum change DB_PW).
+# export DB_NAME=mlflow
+# export DB_USER=postgres
+# export DB_SERVER=db  # ie defaults to db container; can replace with ip address
+# export PGPASS=~/.pgpass  # path of .pgpass file (contains pw)
+# export DB_PORT=5432
+# export FILESTORE=mlruns_vol  # ie defaults to docker volume; can replace with filesys dir
+# export MLFLOW_PORT=5000
+# Those defaults are set automatically so you only need specify the ones you
+# want to change - eg a new DB_PW value should be set but the rest are optional.
 #
-# Note artifacts can be stored in an AWS S3 bucket, in a docker volume called
-# mlruns_vol, or a local drive, via choice of the ARTIFACTS_ROOT variable.
+# Note an AWS S3 bucket can be used instead of local drive for the artifacts
+# store, via the commented-out environment lines below.
 
 version: '3.3'
 
 services:
+    # If using external DB_SERVER, comment out this db container
+    db:
+        restart: always
+        image: postgres:13
+        container_name: mlflow_db
+        expose:
+            - ${DB_PORT:-5432}
+        # networks:
+        #     - backend
+        environment:
+            # - MUID=$UID
+            #  - MGID=$GID
+            - POSTGRES_DB=${DB_NAME:-mlflow}
+            - POSTGRES_USER=${DB_USER:-postgres}
+            - POSTGRES_PASSWORD_FILE=/run/secrets/pg_admin_pw
+        secrets:
+            - pg_admin_pw
+        volumes:
+            - datapg_vol:/var/lib/postgresql/data
+
     app:
         restart: always
         build: ./mlflow
@@ -28,28 +47,32 @@ services:
         container_name: mlflow_server
         expose:
             - 5001
+        # networks:
+        #     - frontend
+        #     - backend
         environment:
-            - BACKEND=postgresql://${MLFLOW_DB_USER:-mlflow}@${MLFLOW_DB_SERVER:-db}:${DB_PORT:-5432}/${MLFLOW_DB_NAME:-mlflow}
-          # - ARTIFACTS_ROOT=/mlruns  # for artifact store in locally mapped volume (below)
-            - ARTIFACTS_ROOT=mlflow-artifacts:/  # for artifact store in AWS S3 (or delete this var)
-            - ARTIFACTS_DEST=${MLFLOW_AWS_S3_BUCKET_URL}
-            - AWS_DEFAULT_REGION=${MLFLOW_AWS_REGION}
-          # If using AWS the credentials file(s) must be in the .aws directory mapped below.
+          - BACKEND=postgresql://${DB_USER:-postgres}@${DB_SERVER:-db}:${DB_PORT:-5432}/${DB_NAME:-mlflow}
+          - ARTIFACTS=/mlruns  # in-container path to filestore in filesys
+          # For artifact store in AWS S3 (uses boto that was installed in container):
+          # Commment out ARTIFACTS line above and instead use:
+          #  - ARTIFACTS="s3://mlflow_bucket/my_mlflow_dir/"
+          #  - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+          #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+          #  - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
         volumes:
-            - ${MFLOW_FILESTORE:-mlruns_vol}:/mlruns  # ignored if using S3
-            - ${PGPASS:-~/.pgpass}:/root/.pgpass  # provides pw for mlflow database, outside of container
-            - ${AWSCREDS:-~/.aws}:/root/.aws  # provides AWS creds, outside of container
+            - ${FILESTORE:-mlruns_vol}:/mlruns  # can comment out this line if using S3
+            - ${PGPASS:-~/.pgpass}:/root/.pgpass  # provides the pw for BACKEND database
             - condaenv_vol:/opt/conda  # provides continuity/speed when looping runs with same container
         command: 
-            - sh    # (sh form here allows for var substitution of BACKEND and ARTIFACTS vars)
+            - sh    # (sh allows for var substitution of BACKEND and ARTIFACTS)
             - -c
             - mlflow server 
                 --port 5001
                 --host 0.0.0.0 
                 --backend-store-uri $${BACKEND} 
-                --default-artifact-root $${ARTIFACTS_ROOT}
-                --artifacts-destination $${ARTIFACTS_DEST}
-                --serve-artifacts
+                --default-artifact-root $${ARTIFACTS}
+        # depends_on:
+        #     - db
 
     nginx:
         restart: always
@@ -58,9 +81,22 @@ services:
         container_name: mlflow_nginx
         ports:
             - "${MLFLOW_PORT:-5000}:80"
+        # networks:
+        #     - frontend
         depends_on:
             - app
 
+# networks:
+#     frontend:
+#         driver: bridge
+#     backend:
+#         driver: bridge
+
+secrets:
+    pg_admin_pw:
+        file: ~/.pgadminpw
+
 volumes:
     mlruns_vol:
+    datapg_vol:
     condaenv_vol:

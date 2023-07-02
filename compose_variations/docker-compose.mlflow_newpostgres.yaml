@@ -9,7 +9,7 @@
 # export DB_SERVER=db  # ie defaults to db container; can replace with ip address
 # export PGPASS=~/.pgpass  # path of .pgpass file (contains pw)
 # export DB_PORT=5432
-# export FILESTORE=mlrun_data  # ie defaults to docker volume; can replace with filesys dir
+# export FILESTORE=mlruns_vol  # ie defaults to docker volume; can replace with filesys dir
 # export MLFLOW_PORT=5000
 # Those defaults are set automatically so you only need specify the ones you
 # want to change - eg a new DB_PW value should be set but the rest are optional.
@@ -38,7 +38,7 @@ services:
         secrets:
             - pg_admin_pw
         volumes:
-            - db_datapg:/var/lib/postgresql/data
+            - datapg_vol:/var/lib/postgresql/data
 
     app:
         restart: always
@@ -60,9 +60,9 @@ services:
           #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
           #  - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
         volumes:
-            - ${FILESTORE:-mlrun_data}:/mlruns  # can comment out this line if using S3
+            - ${FILESTORE:-mlruns_vol}:/mlruns  # can comment out this line if using S3
             - ${PGPASS:-~/.pgpass}:/root/.pgpass  # provides the pw for BACKEND database
-            - condenv:/opt/conda  # provides continuity/speed when looping runs with same container
+            - condaenv_vol:/opt/conda  # provides continuity/speed when looping runs with same container
         command: 
             - sh    # (sh allows for var substitution of BACKEND and ARTIFACTS)
             - -c
@@ -97,6 +97,6 @@ secrets:
         file: ~/.pgadminpw
 
 volumes:
-    db_datapg:
-    mlrun_data:
-    condenv:
+    mlruns_vol:
+    datapg_vol:
+    condaenv_vol:
