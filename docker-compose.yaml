@@ -20,7 +20,6 @@
 version: '3.3'
 
 services:
-    # If using external DB_SERVER, comment out this db container
     db:
         restart: always
         image: postgres:13

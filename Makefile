@@ -13,7 +13,9 @@ L1RATIO = 0.1 0.2 0.3
 EXPT = 'Testing1'
 
 start:
-	docker compose up -d --build
+	# Default location in docker-compose.yml for artifact store is docker volume
+	# but let's set it to local filesystem in makefile here for easy example runs.
+	FILESTORE=/storage/mlruns docker compose up -d --build
 
 stop:
 	docker compose down
