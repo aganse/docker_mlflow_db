@@ -1,62 +1,82 @@
 # docker_mlflow_db
-A docker-compose setup to quickly provide MlFlow service with database backend
-and a reverse proxy frontend which can optionally allow for basic authentication.
-
-### Summary:
-
-Originally based on [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post,
-"Deploy MLflow with docker compose"]
-(https://towardsdatascience.com/deploy-mlflow-with-docker-compose-8059f16b6039),
-with some changes to:
-* replace AWS usage with local mapping for artifact store
-* replace mysql with postgresql and other options.
-* set the whole thing in an easily deployable repo that starts right off the bat
-  (whereas the original was just a web article).
+A docker container setup to quickly provide MLflow as a service, with optional
+database backend, optional storage of artifacts in AWS S3, and a reverse proxy
+frontend which can easily allow one to implement basic or secure authentication
+(not included here).  The main options available are:
+* store the core MLflow info in a new separate standalone database instance, or
+  in a pre-existing database instance elsewhere (including perhaps AWS RDS).
+  Note a PostgreSQL database is assumed in this repo's setup, although altering
+  to some other database would be a minimal change (mainly in the password file
+  handling)
+* store the run artifact files (like model and graphic/plot files) in the local
+  local filesystem, in a docker volume, or in an S3 bucket,
+* the default setup in this repo serves MLflow with its own database instance,
+  and both database data and artifact files stored in their own docker volumes.
 
 There are several docker-compose.yaml files in the compose_variations
-subdirectory, any of which can be in lieu of the docker-compose.yaml in the
-root directory to use the desired variation (although admittedly those others
-might be slightly out of date in comparison, but hopefully at least need only
-minimal tweaks if any).  The docker-compose.yaml file is a copy of
-compose_variations/docker-compose.mlflow_existingpostgres.yaml.
+subdirectory, any of which can be used in lieu of the docker-compose.yaml in the
+root directory to use the desired variation.
 
-The nginx reverse-proxy on the front end allows use of an htpasswd file in the
-nginx container to provide non-secure, basic logins for workgroup members.  Note
-this approach is not secure and is not encrypted - it must not be used for
-internet-open systems, only within an already-firewalled company network, just
-to prevent inadvertent changes by curious browsing colleagues.
+In all variations, the additional nginx reverse-proxy on the front end allows
+for options such as:
+* using an htpasswd file in the nginx container to provide non-secure, basic
+  logins for workgroup members behind an already-secure firewall,
+* implementing more full-fledged certficate-based secure access,
+* easily swapping out the nginx image with that some other comparable service
+  (caddy for example).
+No secure access is implemented here, deemed outside the scope of this repo,
+but by having the reverse proxy in place and already correctly functional then
+one may focus one's effort for updates on just the reverse proxy component.
 
 
 ### To run and connect to MLflow:
 
-First, there are some env vars which set things like ports and database name
-and so on; these all have defaults when not specified, but these are the most
-likely to need setting (typically put into .bashrc).  No environment variables
-contain security credentials - those are in ~/.aws and ~/.pgpass files.
+There are a set of environment variables that can control the behavior of the
+implementation, but depending on one's needs one one may get away with not
+specifying any of them, simply using the defaults for all of them.  Password
+for the database is supplied securely via a ~/.pgpass file, PostgreSQL's standard
+handling mechanism.
+
+Here are the possible env vars one may set, and their defaults which will be
+used if the variable is not explicitly set:
 ```bash
-export AWS_REGION=us-west-2  # (or whichever region)
-export AWS_S3BUCKETURL=s3://mybucketname/myprefix/
-export DB_SERVER=mydatabaseserver.abcdefghij.us-west-2.rds.amazonaws.com
-export DB_NAME=mlflow2
+export DB_NAME=mlflow
+export DB_USER=postgres
+export DB_SERVER=db  # which is the name of the separate standalone database
+                     # instance, but could be set to something like
+                     # myrdsdatabaseserver.abcdefghij.us-west-2.rds.amazonaws.com
+export DB_PORT=5432  # port of database process
+export PGADMINPW=~/.pgadminpw  # file containing pw to use for admin user of new standalone db (if used)
+export PGPASS=~/.pgpass  # file containing pw to use for mlflow (DB_USER) account, in PostgreSQL pgpass format
+export FILESTORE=/storage/mlruns  # unused if using S3
+export AWS_DEFAULT_REGION=us-west-2                    # unused if NOT using S3
+export AWS_S3BUCKETURL=s3://mybucketname/myprefix/     # unused if NOT using S3
+export AWS_ACCESS_KEY_ID=xxxxxxxxxxxxxxxx              # unused if NOT using S3
+export AWS_SECRET_ACCESS_KEY=xxxxxxxxxxxxxxxx          # unused if NOT using S3
 ```
 
 *Warning:*
-Even with putting those aws and postgres security credentials in those files,
-it's important to note that this setup is still fundamentally insecure - you
-should either be sure to run this strictly on a secure, company-internal,
-firewalled intranet and/or wrapped within some secure/https, internet-facing
-layer such as aws cloudfront or whatever.
+Note regardless of the mechanisms noted above, it's important to note that the
+public domain version of MLflow is still fundamentally insecure, with no user logins.
+One should run this strictly on a secure, company-internal, firewalled intranet
+and/or wrapped within some secure/https, internet-facing layer.
 Overall the typical use-case here is individual or small-group usage contained
 inside a company's internal network behind a firewall, so not at the top of my
 concern list.  Please beware for use-cases beyond that.
 
-Anyhow, start the containers with `make start` or:
+One easy way to start the containers using separate new standalone db instance
+is to just use let MLflow use the admin user account to access the database.
+(Never do this for a database other than the standalone one, and be judicious
+about even that.)
 ```bash
-docker compose up -d --build 
+echo -n mydbadminpassword  > ~/.pgadminpw
+echo db:5432:mlflow:postgres:mydbadminpassword > ~/.pgpass
+chmod 600 ~/.pg*
+make start
 ```
-(`-d` for detached mode, `--build` to build the underlying containers if needed)
-The first time will download/build the containers, but after that it will
-start back up the existing containers and volumes, as can be seen via
+The first time it's run will be slower as it must download/build the containers,
+but after that first time it will start back up the existing containers and
+volumes, as can be verified via the logs:
 ```bash
 docker compose logs -f
 ```
@@ -67,7 +87,7 @@ We can verify it's all up and ready via:
 CONTAINER ID   IMAGE             COMMAND                  CREATED          STATUS          PORTS                                   NAMES
 dc99e6fc8d80   mlflow_nginx      "nginx -g 'daemon of…"   18 minutes ago   Up 18 minutes   0.0.0.0:5000->80/tcp, :::5000->80/tcp   mlflow_nginx
 259ea89f1a9a   mlflow_server     "sh -c 'mlflow serve…"   19 minutes ago   Up 18 minutes   5001/tcp                                mlflow_server
-# [and if running with its own postgres db (as in compose_variations/docker-compose.mlflow_postgres_nginx.yaml)]:
+# [and if running with its own postgres db you'll also see...]
 07bbead3e910   postgres:latest   "docker-entrypoint.s…"   19 minutes ago   Up 19 minutes   5432/tcp                                mlflow_db
 ```
 
@@ -106,6 +126,9 @@ and development:
 
 ### Some other relevant links:
 
+Initial implementation originally based on
+[Guillaume Androz's 10-Jan-2020 Toward-Data-Science post, "Deploy MLflow with docker compose"]
+(https://towardsdatascience.com/deploy-mlflow-with-docker-compose-8059f16b6039),
 https://github.com/ymym3412/mlflow-docker-compose  
 https://medium.com/vantageai/keeping-your-ml-model-in-shape-with-kafka-airflow-and-mlflow-143d20024ba6  
 https://docs.nginx.com/nginx/admin-guide/security-controls/configuring-http-basic-authentication/
