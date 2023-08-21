@@ -1,10 +1,11 @@
 # docker_mlflow_db
-A Docker container setup to quickly provide MLflow as a service, with optional
+
+A ready-to-run Docker container setup to quickly provide MLflow as a service, with optional
 database backend, optional storage of artifacts in AWS S3, and a reverse proxy
 frontend which could allow one to easily implement basic or secure authentication.
 
 > <SUP>
-> Note this repo is part of a trio that you might find useful together
+> :bulb: Note this repo is part of a trio that you might find useful together
 > (but all are separate tools that can be used independently):
 >   
 > * [docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
@@ -16,6 +17,7 @@ frontend which could allow one to easily implement basic or secure authenticatio
 > * [vim_mlflow](https://github.com/aganse/vim-mlflow):
 >     a Vim plugin to browse the MLflow parameters and metrics instead of GUI
 > </SUP>
+<P>&nbsp;<P>
 
 
 ## Summary
@@ -45,7 +47,7 @@ No secure access is implemented here, deemed outside the scope of this repo,
 but by having the reverse proxy in place and already correctly functional then
 one may focus one's effort for updates on just the reverse proxy component.
 
-### To run and connect to MLflow
+## To run and connect to MLflow
 
 An easy way to start the containers using separate new standalone db instance
 is to just use let MLflow use the admin user account to access the database.
@@ -122,7 +124,7 @@ inside a company's internal network behind a firewall, so not at the top of my
 concern list.  Please beware for use-cases beyond that.
 
 
-### A few other functionalities to note
+## A few other functionalities to note
 
 The makefile contains the following two macros which can be useful in testing
 and development:
@@ -137,7 +139,7 @@ and development:
   [vim-mlflow](https://github.com/aganse/vim-mlflow) Vim plugin.
 
 
-### Relevant links
+## Relevant links
 
 Initial implementation was originally based on
 [Guillaume Androz's 10-Jan-2020 Toward-Data-Science post, "Deploy MLflow with docker compose"](https://towardsdatascience.com/deploy-mlflow-with-docker-compose-8059f16b6039) (thanks for getting me started!)
