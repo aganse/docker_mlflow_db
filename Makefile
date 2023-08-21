@@ -15,15 +15,15 @@ EXPT = 'Testing1'
 start:
 	# Default location in docker-compose.yml for artifact store is docker volume
 	# but let's set it to local filesystem in makefile here for easy example runs.
-	FILESTORE=/storage/mlruns docker compose up -d --build
+	docker compose up -d --build
 
 stop:
 	docker compose down
 
 clean:
-	docker volume rm docker_mlflow_db_mlruns_vol
 	docker volume rm docker_mlflow_db_datapg_vol
 	docker volume rm docker_mlflow_db_condaenv_vol
+	docker volume rm docker_mlflow_db_mlruns_vol
 
 mlflowquickcheck:
 	# Simple access check to mlflow server on host port; just lists experiments.

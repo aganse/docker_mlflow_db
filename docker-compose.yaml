@@ -51,7 +51,7 @@ services:
         #     - backend
         environment:
           - BACKEND=postgresql://${DB_USER:-postgres}@${DB_SERVER:-db}:${DB_PORT:-5432}/${DB_NAME:-mlflow}
-          - ARTIFACTS=/mlruns  # in-container path to filestore in filesys
+          - ARTIFACTS=/storage/mlruns  # in-container path to filestore in filesys
           # For artifact store in AWS S3 (uses boto that was installed in container):
           # Commment out ARTIFACTS line above and instead use:
           #  - ARTIFACTS="s3://mlflow_bucket/my_mlflow_dir/"
