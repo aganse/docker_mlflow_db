@@ -8,13 +8,13 @@ frontend which could allow one to easily implement basic or secure authenticatio
 > :bulb: Note this repo is part of a trio that you might find useful together
 > (but all are separate tools that can be used independently):
 >   
-> * [docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
+> * [aganse/docker_mlflow_db](https://github.com/aganse/docker_mlflow_db):
 >     ready-to-run MLflow server with PostgreSQL, AWS S3, Nginx
 >   
-> * [py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
+> * [aganse/py_tf2_gpu_dock_mlflow](https://github.com/aganse/py_tf2_gpu_dock_mlflow):
 >     ready-to-run Python/Tensorflow2/MLflow setup to train models on GPU
 >   
-> * [vim_mlflow](https://github.com/aganse/vim-mlflow):
+> * [aganse/vim_mlflow](https://github.com/aganse/vim-mlflow):
 >     a Vim plugin to browse the MLflow parameters and metrics instead of GUI
 > </SUP>
 <P>&nbsp;<P>
