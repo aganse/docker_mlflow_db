@@ -1,5 +1,5 @@
 # docker_mlflow_db
-A docker container setup to quickly provide MLflow as a service, with optional
+A Docker container setup to quickly provide MLflow as a service, with optional
 database backend, optional storage of artifacts in AWS S3, and a reverse proxy
 frontend which could allow one to easily implement basic or secure authentication.
 
