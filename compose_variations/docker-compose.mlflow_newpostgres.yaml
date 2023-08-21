@@ -20,6 +20,7 @@
 version: '3.3'
 
 services:
+    # If using external DB_SERVER, comment out this db container
     db:
         restart: always
         image: postgres:13
@@ -59,7 +60,7 @@ services:
           #  - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
           #  - AWS_DEFAULT_REGION=${AWS_DEFAULT_REGION}
         volumes:
-            - ${FILESTORE:-/storage/mlruns}:/storage/mlruns  # can comment out this line if using S3
+            - ${FILESTORE:-mlruns_vol}:/mlruns  # can comment out this line if using S3
             - ${PGPASS:-~/.pgpass}:/root/.pgpass  # provides the pw for BACKEND database
             - condaenv_vol:/opt/conda  # provides continuity/speed when looping runs with same container
         command: 

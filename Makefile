@@ -3,7 +3,8 @@
 
 # MLGWHOST variable is the address for accessing mlflow from inside the
 # mlflow_server docker container.
-MLGWHOST=$(shell docker inspect -f '{{ .NetworkSettings.Networks.docker_mlflow_db_frontend.Gateway }}' mlflow_server)
+MLGWHOST=$(shell docker inspect -f '{{ .NetworkSettings.Networks.docker_mlflow_db_default.Gateway }}' mlflow_server)
+# MLGWHOST=172.17.0.1  # may be ubuntu-specific
 # Localhost is used to access mlflow outside the docker container.
 MLFLOW_PORT=5000
 
@@ -12,27 +13,29 @@ L1RATIO = 0.1 0.2 0.3
 EXPT = 'Testing1'
 
 start:
-	docker-compose up -d --build
+	# Default location in docker-compose.yml for artifact store is docker volume
+	# but let's set it to local filesystem in makefile here for easy example runs.
+	FILESTORE=/storage/mlruns docker compose up -d --build
 
 stop:
-	docker-compose down
+	docker compose down
 
 clean:
-	docker volume rm docker_mlflow_db_mlrun_data
-	docker volume rm docker_mlflow_db_db_datapg
-	docker volume rm docker_mlflow_db_condenv
+	docker volume rm docker_mlflow_db_mlruns_vol
+	docker volume rm docker_mlflow_db_datapg_vol
+	docker volume rm docker_mlflow_db_condaenv_vol
 
 mlflowquickcheck:
 	# Simple access check to mlflow server on host port; just lists experiments.
 	docker exec                                                      \
 	    -e MLFLOW_TRACKING_URI=http://${MLGWHOST}:${MLFLOW_PORT}     \
 	    mlflow_server                                                \
-	    mlflow experiments list  # (for mlflow v2 switch 'list' to 'search')
+	    mlflow experiments search  # (in mlflow v1 use 'list', v2 use 'search')
 
 mlflowpopulate:
 	# Populates entries in mlflow with the mlflow team's own mlflow-example.
-	# First time is slow as conda-installs packages to condaenv volume,
-	# but runs quick after that via reusing same condaenv volume.
+	# First time is slow as conda-installs packages to condaenv_vol volume,
+	# but runs quick after that via reusing same condaenv_vol volume.
 	docker exec                                                      \
 	    -e MLFLOW_TRACKING_URI=http://${MLGWHOST}:${MLFLOW_PORT}     \
 	    mlflow_server                                                \
