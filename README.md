@@ -50,12 +50,12 @@ one may focus one's effort for updates on just the reverse proxy component.
 ## To run and connect to MLflow
 
 An easy way to start the containers using separate new standalone db instance
-is to just use let MLflow use the admin user account to access the database.
+is to just let MLflow use the admin user account to access the database.
 (Not recommended for a database other than the standalone one, and be judicious
 about even that.)
 ```bash
-echo -n mydbadminpassword  > ~/.pgadminpw
-echo db:5432:mlflow:postgres:mydbadminpassword > ~/.pgpass
+echo -n mydbadminpassword  > ~/.pgadminpw  # used when creating standalone db
+echo db:5432:mlflow:postgres:mydbadminpassword > ~/.pgpass  # used by mlflow to save/get its results
 chmod 600 ~/.pg*
 make start
 ```
