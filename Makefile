@@ -12,6 +12,7 @@ ALPHA = 0.0002 0.002 0.02 0.2 2.0 20.0 200.0 2000.0
 L1RATIO = 0.1 0.2 0.3
 EXPT = 'Testing1'
 
+
 start:
 	# Default location in docker-compose.yml for artifact store is docker volume
 	# but let's set it to local filesystem in makefile here for easy example runs.
@@ -45,6 +46,7 @@ mlflowpopulate:
 		$(foreach loop_alpha, $(ALPHA),                              \
 		echo passing params $(loop_l1ratio) $(loop_alpha) into loop; \
 		docker exec                                                  \
+		    -e LD_LIBRARY_PATH=/opt/conda/lib                        \
 		    -e MLFLOW_TRACKING_URI=http://${MLGWHOST}:${MLFLOW_PORT} \
 		    mlflow_server                                            \
 		    mlflow run /home/mlflow-example                          \
