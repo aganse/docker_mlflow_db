@@ -1,12 +1,16 @@
 # Makefile for testing and populating of the docker/mlflow/db setup.
 # Warning: note 'make clean' will empty out your mlflow contents completely.
 
+#export MLFLOW_DB_SERVER=myRDSserverHostname.amazon.com
+export MLFLOW_PORT=5000
+export MLFLOW_AWS_REGION=us-west-2
+export MLFLOW_AWS_S3_BUCKET_URL=s3://mybucket/mlruns
+
 # MLGWHOST variable is the address for accessing mlflow from inside the
 # mlflow_server docker container.
 MLGWHOST=$(shell docker inspect -f '{{ .NetworkSettings.Networks.docker_mlflow_db_default.Gateway }}' mlflow_server)
 # MLGWHOST=172.17.0.1  # may be ubuntu-specific
 # Localhost is used to access mlflow outside the docker container.
-MLFLOW_PORT=5000
 
 ALPHA = 0.0002 0.002 0.02 0.2 2.0 20.0 200.0 2000.0
 L1RATIO = 0.1 0.2 0.3
@@ -16,7 +20,7 @@ EXPT = 'Testing1'
 start:
 	# Default location in docker-compose.yml for artifact store is docker volume
 	# but let's set it to local filesystem in makefile here for easy example runs.
-	docker compose up -d --build
+	docker compose up -d
 
 stop:
 	docker compose down
