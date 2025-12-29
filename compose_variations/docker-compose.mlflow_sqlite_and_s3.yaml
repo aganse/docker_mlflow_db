@@ -36,18 +36,19 @@ services:
         volumes:
           # If using AWS the credentials file(s) must be in the .aws directory mapped below.
             - ${AWSCREDS:-~/.aws}:/root/.aws  # provides AWS creds, outside of container
-            - /home/ubuntu:/mlflow_sqlite  # map backend sqlite database file location to account home dir (if using sqlite backend)
+            - /home/ubuntu/mlflow_sqlite:/mlflow_sqlite  # map backend sqlite database file location to account home dir (if using sqlite backend)
             - condaenv_vol:/opt/conda  # provides continuity/speed when looping runs with same container
           # - ${PGPASS:-~/.pgpass}:/root/.pgpass  # eg provides pw for mlflow database in postgres
-          # - ${MFLOW_FILESTORE:-mlruns_vol}:/mlruns  # ignore if using S3
+          # - ${MFLOW_FILESTORE:-mlruns_vol}:/mlruns  # comment out if using S3
         command:
+            # Add --default-artifact-root $${ARTIFACTS_ROOT} below if you need it instead
+            # of artifacts-destination (eg when saving artifacts locally instead of s3)
             - sh    # (sh form here allows for var substitution of BACKEND and ARTIFACTS vars)
             - -c
             - mlflow server
                 --port 5001
                 --host 0.0.0.0
                 --backend-store-uri $${BACKEND}
-                #--default-artifact-root $${ARTIFACTS_ROOT}
                 --artifacts-destination $${ARTIFACTS_DEST}
                 --serve-artifacts
         healthcheck:
