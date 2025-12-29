@@ -7,7 +7,8 @@ the docker-compose.yaml in root dir so there may be a few other differences.
 
 | file                               | description |
 |------------------------------------|-------------|
-|docker-compose.mlflow_existingpostgres.yaml|connect mlflow to pre-existing postgres mlflow backend database (repo default)|
+|docker-compose.mlflow_sqlite_and_s3.yaml|stand up a local sqlite backend (or use pre-existing postgres) with artifacts going into s3 (repo default)|
+|docker-compose.mlflow_existingpostgres.yaml|connect mlflow to pre-existing postgres mlflow backend database|
 |docker-compose.mlflow_newpostgres.yaml|stand up a new postgres db and connect mlflow to it for backend|
 |docker-compose.mlflow_sqlite.yaml   |stand up a new sqlite db and connect mlflow to it for backend|
 |docker-compose.mlflow_mysql.yaml    |stand up a new mysql db and connect mlflow to it for backend|
@@ -16,5 +17,5 @@ the docker-compose.yaml in root dir so there may be a few other differences.
 
 To use one of these just copy it to ../docker-compose.yaml.
 Note the repo's default docker-compose.yaml in its root directory is
-docker-compose.mlflow_existingpostgres.yaml to begin with.
+docker-compose.mlflow_sqlite_and_s3.yaml.
 

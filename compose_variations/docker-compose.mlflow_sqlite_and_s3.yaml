@@ -1,0 +1,74 @@
+# Connect mlflow to a pre-existing database and s3 bucket for all artifacts.
+#
+# The following environment vars can be set in the shell before running
+# docker compose (but typically only set first three, or first and fourth):
+# export MLFLOW_DB_SERVER=db  # defaults to db container; can replace with ip address
+# export MLFLOW_AWS_S3_BUCKET_URL=s3://mybucket/myprefix/   # no quotes
+# export MLFLOW_AWS_REGION=us-west-2                        # no quotes
+# export MLFLOW_FILESTORE=mlruns_vol  # defaults to docker vol; can replace with dir
+# export MLFLOW_DB_NAME=mlflow
+# export MLFLOW_DB_USER=mlflow
+# export MLFLOW_PORT=5000  # port at which browser will find mlflow ui
+# export DB_PORT=5432      # port at which mlflow accesses database
+# export PGPASS=~/.pgpass  # path of .pgpass file containing db pw
+# export AWSCREDS=~/.aws   # path of AWS credentials files
+# Those defaults are set automatically - you only need specify the ones you
+# want to change - add those vars you want to change to top of Makefil.
+#
+# Note artifacts can be stored in an AWS S3 bucket, in a docker volume called
+# mlruns_vol, or a local drive, via choice of the ARTIFACTS_ROOT/ARTIFACTS_DEST vars.
+
+services:
+    app:
+        restart: always
+        build: ./mlflow
+        image: mlflow_server
+        container_name: mlflow_server
+        expose:
+            - 5001
+        environment:
+          # - BACKEND=postgresql://${MLFLOW_DB_USER:-mlflow}@${MLFLOW_DB_SERVER:-db}:${DB_PORT:-5432}/${MLFLOW_DB_NAME:-mlflow}
+            - BACKEND=sqlite:////mlflow_sqlite/mlflow.db
+            - ARTIFACTS_DEST=${MLFLOW_AWS_S3_BUCKET_URL}
+            - AWS_DEFAULT_REGION=${MLFLOW_AWS_REGION}
+          # - ARTIFACTS_ROOT=/mlruns  # for artifact store in locally mapped volume (below)
+          # - ARTIFACTS_ROOT=mlflow-artifacts:/  # for artifact store in AWS S3 (or delete this var)
+        volumes:
+          # If using AWS the credentials file(s) must be in the .aws directory mapped below.
+            - ${AWSCREDS:-~/.aws}:/root/.aws  # provides AWS creds, outside of container
+            - /home/ubuntu:/mlflow_sqlite  # map backend sqlite database file location to account home dir (if using sqlite backend)
+            - condaenv_vol:/opt/conda  # provides continuity/speed when looping runs with same container
+          # - ${PGPASS:-~/.pgpass}:/root/.pgpass  # eg provides pw for mlflow database in postgres
+          # - ${MFLOW_FILESTORE:-mlruns_vol}:/mlruns  # ignore if using S3
+        command:
+            - sh    # (sh form here allows for var substitution of BACKEND and ARTIFACTS vars)
+            - -c
+            - mlflow server
+                --port 5001
+                --host 0.0.0.0
+                --backend-store-uri $${BACKEND}
+                #--default-artifact-root $${ARTIFACTS_ROOT}
+                --artifacts-destination $${ARTIFACTS_DEST}
+                --serve-artifacts
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request;
+                   urllib.request.urlopen('http://localhost:5001/')"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 20s
+
+    nginx:
+        restart: always
+        build: ./nginx
+        image: mlflow_nginx
+        container_name: mlflow_nginx
+        ports:
+            - "${MLFLOW_PORT:-5000}:80"
+        depends_on:
+            app:
+                condition: service_healthy
+
+volumes:
+    mlruns_vol:
+    condaenv_vol:
